@@ -143,14 +143,12 @@ let isDragging = false;
 let startX = 0, startY = 0;
 let lastTouchDistance = null;
 
-/* Map poster HQ coords → displayed canvas coords */
 function mapToDisplayed(x, y) {
   const displayWidth = canvas.clientWidth;
   const factor = displayWidth / canvas.width;
   return { dx: x * factor, dy: y * factor };
 }
 
-/* Center upload buttons on frame */
 function updateUploadRowPosition() {
   const p = mapToDisplayed(frame.x, frame.y);
   const buttons = uploadRow.getBoundingClientRect();
@@ -290,22 +288,36 @@ cameraBtn.addEventListener("click", ()=> imgCameraInput.click());
 downloadBtn.addEventListener("click", () => {
   if (!frame.img) return alert("Upload an image first!");
 
-  draw(); // ensure canvas is up-to-date
+  draw(); // ensure canvas is current
 
-  const fileName = "Rathnavalli_Sathyan_" + downloadCount + ".png";
-  downloadCount++;
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  const tempCtx = tempCanvas.getContext("2d");
 
-  canvas.toBlob((blob) => {
-    if (!blob) return alert("Failed to generate image!");
+  // Draw poster
+  tempCtx.drawImage(poster, 0, 0, canvas.width, canvas.height);
+
+  // Draw frame image
+  if(frame.img){
+    tempCtx.save();
+    tempCtx.beginPath();
+    tempCtx.arc(frame.x, frame.y, frame.r, 0, Math.PI*2);
+    tempCtx.clip();
+    tempCtx.drawImage(frame.img, posX, posY, frame.img.width*imgScale, frame.img.height*imgScale);
+    tempCtx.restore();
+  }
+
+  tempCanvas.toBlob(blob => {
+    if(!blob) return alert("Failed to generate image!");
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
     a.href = url;
-    a.download = fileName;
+    a.download = "Rathnavalli_Sathyan_" + downloadCount + ".png";
+    downloadCount++;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-
     URL.revokeObjectURL(url);
   }, "image/png");
 });
