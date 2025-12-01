@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rathnavalli - Create Your Own Poster</title>
 
-
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -167,13 +166,13 @@ function draw() {
     ctx.arc(frame.x, frame.y, frame.r, 0, Math.PI*2);
     ctx.clip();
 
-    ctx.drawImage(
-      frame.img,
-      posX,
-      posY,
-      frame.img.width * imgScale,
-      frame.img.height * imgScale
-    );
+    // draw image scaled around its center
+    const centerX = posX + (frame.img.width * imgScale)/2;
+    const centerY = posY + (frame.img.height * imgScale)/2;
+
+    ctx.setTransform(imgScale, 0, 0, imgScale, centerX - centerX*imgScale, centerY - centerY*imgScale);
+    ctx.drawImage(frame.img, posX, posY);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     ctx.restore();
   }
@@ -195,9 +194,10 @@ function handleImageSelect(e){
   img.onload = () => {
     frame.img = img;
 
+    // Center image in frame
     imgScale = 1;
-    posX = frame.x - img.width/2;
-    posY = frame.y - img.height/2;
+    posX = frame.x - (img.width * imgScale) / 2;
+    posY = frame.y - (img.height * imgScale) / 2;
 
     sizeSlider.value = 1;
     draw();
@@ -295,6 +295,3 @@ window.addEventListener("resize", updateUploadRowPosition);
 
 </body>
 </html>
-
-
-
