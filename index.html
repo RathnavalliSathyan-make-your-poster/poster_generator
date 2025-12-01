@@ -12,7 +12,7 @@
 <meta property="og:url" content="https://rathnavallisathyan-make-your-poster.github.io/poster_generator/">
 <meta property="og:type" content="website">
 
-<!-- Twitter card -->
+<!-- Optional: Twitter card preview -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Check out my poster!">
 <meta name="twitter:description" content="Create and download your own poster using this editor.">
@@ -120,6 +120,8 @@ const ctx = canvas.getContext("2d");
 const sizeSlider = document.getElementById("sizeSlider");
 const uploadRow = document.getElementById("uploadRow");
 const canvasWrapper = document.getElementById("canvasWrapper");
+const downloadBtn = document.getElementById("downloadBtn");
+const resetBtn = document.getElementById("resetBtn");
 
 let downloadCount = 1;
 
@@ -180,6 +182,7 @@ function draw() {
       frame.img.width * imgScale,
       frame.img.height * imgScale
     );
+
     ctx.restore();
   }
 
@@ -199,20 +202,22 @@ function handleImageSelect(e){
   const img = new Image();
   img.onload = () => {
     frame.img = img;
+
     imgScale = 1;
     posX = frame.x - img.width/2;
     posY = frame.y - img.height/2;
+
     sizeSlider.value = 1;
     draw();
   };
+
   img.src = URL.createObjectURL(file);
   downloadCount = 1;
 }
 
-/* Drag & Scale */
-canvas.addEventListener("touchstart", e => {
+/* TOUCH drag */
+canvas.addEventListener("touchstart", e=>{
   if(!frame.img) return;
-
   if(e.touches.length === 1){
     isDragging = true;
     startX = e.touches[0].clientX;
@@ -225,8 +230,8 @@ canvas.addEventListener("touchstart", e => {
   }
 });
 
-canvas.addEventListener("touchmove", e => {
-  if(!frame.img) return;
+canvas.addEventListener("touchmove", e=>{
+  if(!frame.img || (!isDragging && e.touches.length === 1)) return;
   e.preventDefault();
 
   if(e.touches.length === 1 && isDragging){
@@ -248,18 +253,16 @@ canvas.addEventListener("touchmove", e => {
   draw();
 });
 
-canvas.addEventListener("touchend", e => {
-  if(e.touches.length < 2) lastTouchDistance = null;
-  if(e.touches.length === 0) isDragging = false;
-});
+canvas.addEventListener("touchend", ()=> { lastTouchDistance = null; isDragging = false; });
 
-/* Mouse drag */
+/* MOUSE drag for PC */
 canvas.addEventListener("mousedown", e => {
   if (!frame.img) return;
   isDragging = true;
   startX = e.clientX;
   startY = e.clientY;
 });
+
 canvas.addEventListener("mousemove", e => {
   if (!frame.img || !isDragging) return;
   posX += e.clientX - startX;
@@ -268,10 +271,11 @@ canvas.addEventListener("mousemove", e => {
   startY = e.clientY;
   draw();
 });
+
 canvas.addEventListener("mouseup", () => isDragging = false);
 canvas.addEventListener("mouseleave", () => isDragging = false);
 
-/* Slider scale */
+/* Scale */
 sizeSlider.addEventListener("input", ()=> {
   imgScale = parseFloat(sizeSlider.value);
   draw();
@@ -282,23 +286,26 @@ imgUploadInput.addEventListener("change", handleImageSelect);
 imgCameraInput.addEventListener("change", handleImageSelect);
 cameraBtn.addEventListener("click", ()=> imgCameraInput.click());
 
-/* Download */
+/* FIXED DOWNLOAD BUTTON */
 downloadBtn.addEventListener("click", () => {
-  if(!frame.img) return alert("Upload an image first!");
+  if (!frame.img) return alert("Upload an image first!");
 
-  draw();
+  draw(); // ensure canvas is up-to-date
+
   const fileName = "Rathnavalli_Sathyan_" + downloadCount + ".png";
   downloadCount++;
 
-  canvas.toBlob(blob => {
-    if(!blob) return alert("Failed to generate image!");
+  canvas.toBlob((blob) => {
+    if (!blob) return alert("Failed to generate image!");
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
     a.href = url;
     a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+
     URL.revokeObjectURL(url);
   }, "image/png");
 });
@@ -310,11 +317,12 @@ resetBtn.addEventListener("click", () => {
   imgScale = 1;
   sizeSlider.value = 1;
   downloadCount = 1;
+
   draw();
   updateUploadRowPosition();
 });
 
-/* Reposition upload buttons */
+/* Reposition buttons on resize */
 window.addEventListener("resize", updateUploadRowPosition);
 </script>
 
