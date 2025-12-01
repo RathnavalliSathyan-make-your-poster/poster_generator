@@ -5,46 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mobile Poster Editor</title>
 
-<!-- Open Graph metadata for WhatsApp/Link Preview -->
-<meta property="og:title" content="Check out my poster!">
-<meta property="og:description" content="Create and download your own poster using this editor.">
-<meta property="og:image" content="https://github.com/RathnavalliSathyan-make-your-poster/poster_generator/blob/main/WhatsApp%20Image%202025-11-22%20at%2007.34.17_e0b8aebb.jpg?raw=true">
-<meta property="og:url" content="https://rathnavallisathyan-make-your-poster.github.io/poster_generator/">
-<meta property="og:type" content="website">
-
-<!-- Optional: Twitter card preview -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Check out my poster!">
-<meta name="twitter:description" content="Create and download your own poster using this editor.">
-<meta name="twitter:image" content="https://github.com/RathnavalliSathyan-make-your-poster/poster_generator/blob/main/WhatsApp%20Image%202025-11-22%20at%2007.34.17_e0b8aebb.jpg?raw=true">
-</head>
-<body>
-
-<h2>Upload or Capture a Picture</h2>
-
-<div class="slider-container">
-  <label for="sizeSlider">Size:</label>
-  <input type="range" id="sizeSlider" min="0.3" max="3" step="0.01" value="1">
-</div>
-
-<div class="canvas-wrapper" id="canvasWrapper">
-
-  <div class="upload-row" id="uploadRow">
-    <label class="upload-btn" for="imgUploadInput">📁 Upload</label>
-    <button id="cameraBtn">📸 Camera</button>
-  </div>
-
-  <canvas id="finalCanvas"></canvas>
-
-  <input type="file" id="imgUploadInput" accept="image/*">
-  <input type="file" id="imgCameraInput" accept="image/*" capture="environment">
-</div>
-
-<div style="display: flex; gap: 10px;">
-  <button id="resetBtn">Reset</button>
-  <button id="downloadBtn">Download</button>
-</div>
-
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -94,7 +54,7 @@ canvas {
   cursor: grab;
 }
 
-#resetBtn, #downloadBtn {
+#downloadBtn, #resetBtn {
   margin-top: 15px;
   background: white;
   border: 1px solid #bbb;
@@ -103,7 +63,7 @@ canvas {
   border-radius: 8px;
   cursor: pointer;
 }
-#resetBtn:hover, #downloadBtn:hover {
+#downloadBtn:hover, #resetBtn:hover {
   background: #f0f0f0;
 }
 
@@ -113,6 +73,33 @@ canvas {
   gap: 8px;
 }
 </style>
+</head>
+<body>
+
+<h2>Upload or Capture a Picture</h2>
+
+<div class="slider-container">
+  <label for="sizeSlider">Size:</label>
+  <input type="range" id="sizeSlider" min="0.3" max="3" step="0.01" value="1">
+</div>
+
+<div class="canvas-wrapper" id="canvasWrapper">
+
+  <div class="upload-row" id="uploadRow">
+    <label class="upload-btn" for="imgUploadInput">📁 Upload</label>
+    <button id="cameraBtn">📸 Camera</button>
+  </div>
+
+  <canvas id="finalCanvas"></canvas>
+
+  <input type="file" id="imgUploadInput" accept="image/*">
+  <input type="file" id="imgCameraInput" accept="image/*" capture="environment">
+</div>
+
+<div style="display: flex; gap: 10px;">
+  <button id="downloadBtn">Download</button>
+  <button id="resetBtn">Reset</button>
+</div>
 
 <script>
 const canvas = document.getElementById("finalCanvas");
@@ -120,12 +107,12 @@ const ctx = canvas.getContext("2d");
 const sizeSlider = document.getElementById("sizeSlider");
 const uploadRow = document.getElementById("uploadRow");
 const canvasWrapper = document.getElementById("canvasWrapper");
-const resetBtn = document.getElementById("resetBtn");
-const downloadBtn = document.getElementById("downloadBtn");
+
+let downloadCount = 1;
 
 /* POSTER IMAGE */
 const poster = new Image();
-poster.src = "https://github.com/RathnavalliSathyan-make-your-poster/poster_generator/blob/main/WhatsApp%20Image%202025-11-22%20at%2007.34.17_e0b8aebb.jpg?raw=true";
+poster.src = "WhatsApp Image 2025-11-22 at 07.34.17_e0b8aebb.jpg";
 
 /* FRAME ON POSTER */
 const frame = {
@@ -139,24 +126,32 @@ let imgScale = 1;
 let posX = 0, posY = 0;
 let isDragging = false;
 let startX = 0, startY = 0;
-let lastTouchDistance = null;
 
+/* Convert poster HQ coords → displayed canvas coords */
 function mapToDisplayed(x, y) {
   const displayWidth = canvas.clientWidth;
   const factor = displayWidth / canvas.width;
   return { dx: x * factor, dy: y * factor };
 }
 
+/* Center the upload buttons on the circle */
 function updateUploadRowPosition() {
   const p = mapToDisplayed(frame.x, frame.y);
+
   const buttons = uploadRow.getBoundingClientRect();
+  const wrapperRect = canvasWrapper.getBoundingClientRect();
+
   uploadRow.style.left = p.dx - buttons.width / 2 + "px";
   uploadRow.style.top  = p.dy - buttons.height / 2 + "px";
 }
 
 poster.onload = () => {
-  canvas.width = poster.width;
-  canvas.height = poster.height;
+  const w = poster.width;
+  const h = poster.height;
+
+  canvas.width = w;
+  canvas.height = h;
+
   draw();
   updateUploadRowPosition();
 };
@@ -208,6 +203,7 @@ function handleImageSelect(e){
   };
 
   img.src = URL.createObjectURL(file);
+  downloadCount = 1;
 }
 
 /* TOUCH drag */
@@ -217,38 +213,20 @@ canvas.addEventListener("touchstart", e=>{
     isDragging = true;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
-  } else if(e.touches.length === 2){
-    lastTouchDistance = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
   }
 });
 
 canvas.addEventListener("touchmove", e=>{
-  if(!frame.img || (!isDragging && e.touches.length === 1)) return;
+  if(!frame.img || !isDragging) return;
   e.preventDefault();
-
-  if(e.touches.length === 1 && isDragging){
-    posX += e.touches[0].clientX - startX;
-    posY += e.touches[0].clientY - startY;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  } else if(e.touches.length === 2){
-    const dist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    if(lastTouchDistance){
-      imgScale *= dist / lastTouchDistance;
-      sizeSlider.value = imgScale;
-    }
-    lastTouchDistance = dist;
-  }
+  posX += e.touches[0].clientX - startX;
+  posY += e.touches[0].clientY - startY;
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
   draw();
 });
 
-canvas.addEventListener("touchend", ()=> { lastTouchDistance = null; isDragging = false; });
+canvas.addEventListener("touchend", ()=> isDragging = false);
 
 /* MOUSE drag for PC */
 canvas.addEventListener("mousedown", e => {
@@ -271,7 +249,7 @@ canvas.addEventListener("mouseup", () => isDragging = false);
 canvas.addEventListener("mouseleave", () => isDragging = false);
 
 /* Scale */
-sizeSlider.addEventListener("input", ()=> {
+sizeSlider.addEventListener("input", ()=>{
   imgScale = parseFloat(sizeSlider.value);
   draw();
 });
@@ -281,57 +259,33 @@ imgUploadInput.addEventListener("change", handleImageSelect);
 imgCameraInput.addEventListener("change", handleImageSelect);
 cameraBtn.addEventListener("click", ()=> imgCameraInput.click());
 
+/* HQ Download */
+downloadBtn.addEventListener("click", () => {
+  const fileName =
+    "Rathnavalli_Sathyan_" + downloadCount + "_" + Date.now() + ".png";
+
+  downloadCount++;
+
+  canvas.toBlob((blob) => {
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),500);
+  });
+});
+
 /* Reset */
 resetBtn.addEventListener("click", () => {
   frame.img = null;
   uploadRow.style.display = "flex";
   imgScale = 1;
   sizeSlider.value = 1;
+  downloadCount = 1;
 
   draw();
   updateUploadRowPosition();
-});
-
-/* Download */
-downloadBtn.addEventListener("click", () => {
-  if(!frame.img) return; // optional: only allow if an image is uploaded
-
-  const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = canvas.width;
-  tempCanvas.height = canvas.height;
-  const tempCtx = tempCanvas.getContext("2d");
-
-  tempCtx.drawImage(poster, 0, 0);
-
-  if(frame.img){
-    tempCtx.save();
-    tempCtx.beginPath();
-    tempCtx.arc(frame.x, frame.y, frame.r, 0, Math.PI*2);
-    tempCtx.clip();
-
-    tempCtx.drawImage(
-      frame.img,
-      posX,
-      posY,
-      frame.img.width * imgScale,
-      frame.img.height * imgScale
-    );
-
-    tempCtx.restore();
-  }
-
-  tempCtx.beginPath();
-  tempCtx.arc(frame.x, frame.y, frame.r, 0, Math.PI*2);
-  tempCtx.lineWidth = 2;
-  tempCtx.strokeStyle = "#fff";
-  tempCtx.stroke();
-
-  tempCanvas.toBlob(blob => {
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "Rathnavalli_Sathyan.png";
-    link.click();
-  });
 });
 
 /* Reposition buttons on resize */
