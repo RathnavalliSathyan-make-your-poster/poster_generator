@@ -45,7 +45,6 @@ body {
 
 input[type="file"] { display: none; }
 
-/* HQ rendering, scaled only for visual preview */
 canvas {
   width: 95%;
   height: auto;
@@ -115,7 +114,7 @@ let downloadCount = 1;
 const poster = new Image();
 poster.src = "WhatsApp Image 2025-11-22 at 07.34.17_e0b8aebb.jpg";
 
-/* FRAME ON POSTER (HQ COORDINATES) */
+/* FRAME ON POSTER */
 const frame = {
   x: 371,
   y: 1340,
@@ -128,7 +127,7 @@ let posX = 0, posY = 0;
 let isDragging = false;
 let startX = 0, startY = 0;
 
-/* Convert poster HQ coords → visible canvas coords */
+/* Convert poster HQ coords → displayed canvas coords */
 function mapToDisplayed(x, y) {
   const displayWidth = canvas.clientWidth;
   const factor = displayWidth / canvas.width;
@@ -150,7 +149,6 @@ poster.onload = () => {
   const w = poster.width;
   const h = poster.height;
 
-  /* Full-resolution canvas */
   canvas.width = w;
   canvas.height = h;
 
@@ -208,7 +206,7 @@ function handleImageSelect(e){
   downloadCount = 1;
 }
 
-/* Touch drag */
+/* TOUCH drag */
 canvas.addEventListener("touchstart", e=>{
   if(!frame.img) return;
   if(e.touches.length === 1){
@@ -229,6 +227,26 @@ canvas.addEventListener("touchmove", e=>{
 });
 
 canvas.addEventListener("touchend", ()=> isDragging = false);
+
+/* MOUSE drag for PC */
+canvas.addEventListener("mousedown", e => {
+  if (!frame.img) return;
+  isDragging = true;
+  startX = e.clientX;
+  startY = e.clientY;
+});
+
+canvas.addEventListener("mousemove", e => {
+  if (!frame.img || !isDragging) return;
+  posX += e.clientX - startX;
+  posY += e.clientY - startY;
+  startX = e.clientX;
+  startY = e.clientY;
+  draw();
+});
+
+canvas.addEventListener("mouseup", () => isDragging = false);
+canvas.addEventListener("mouseleave", () => isDragging = false);
 
 /* Scale */
 sizeSlider.addEventListener("input", ()=>{
@@ -276,5 +294,3 @@ window.addEventListener("resize", updateUploadRowPosition);
 
 </body>
 </html>
-
-
