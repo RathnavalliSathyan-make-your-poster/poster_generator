@@ -110,9 +110,10 @@ const canvasWrapper = document.getElementById("canvasWrapper");
 
 let downloadCount = 1;
 
-/* POSTER IMAGE */
+/* POSTER IMAGE (with CORS FIX + RAW GitHub link) */
 const poster = new Image();
-poster.src = "WhatsApp Image 2025-11-22 at 07.34.17_e0b8aebb.jpg";
+poster.crossOrigin = "anonymous";
+poster.src = "https://raw.githubusercontent.com/RathnavalliSathyan-make-your-poster/poster_generator/main/WhatsApp%20Image%202025-11-22%20at%2007.34.17_e0b8aebb.jpg";
 
 /* FRAME ON POSTER */
 const frame = {
@@ -195,15 +196,30 @@ function handleImageSelect(e){
   downloadCount = 1;
 }
 
+/* TOUCH/MOUSE DRAG */
+canvas.addEventListener("mousedown", e => {
+  if (!frame.img) return;
+  isDragging = true;
+  startX = e.clientX;
+  startY = e.clientY;
+});
+canvas.addEventListener("mousemove", e => {
+  if (!frame.img || !isDragging) return;
+  posX += e.clientX - startX;
+  posY += e.clientY - startY;
+  startX = e.clientX;
+  startY = e.clientY;
+  draw();
+});
+canvas.addEventListener("mouseup", () => isDragging = false);
+canvas.addEventListener("mouseleave", () => isDragging = false);
+
 canvas.addEventListener("touchstart", e=>{
   if(!frame.img) return;
-  if(e.touches.length === 1){
-    isDragging = true;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  }
+  isDragging = true;
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
 });
-
 canvas.addEventListener("touchmove", e=>{
   if(!frame.img || !isDragging) return;
   e.preventDefault();
@@ -213,28 +229,9 @@ canvas.addEventListener("touchmove", e=>{
   startY = e.touches[0].clientY;
   draw();
 });
-
 canvas.addEventListener("touchend", ()=> isDragging = false);
 
-canvas.addEventListener("mousedown", e => {
-  if (!frame.img) return;
-  isDragging = true;
-  startX = e.clientX;
-  startY = e.clientY;
-});
-
-canvas.addEventListener("mousemove", e => {
-  if (!frame.img || !isDragging) return;
-  posX += e.clientX - startX;
-  posY += e.clientY - startY;
-  startX = e.clientX;
-  startY = e.clientY;
-  draw();
-});
-
-canvas.addEventListener("mouseup", () => isDragging = false);
-canvas.addEventListener("mouseleave", () => isDragging = false);
-
+/* Scale around center */
 sizeSlider.addEventListener("input", ()=>{
   if(!frame.img) return;
 
@@ -249,21 +246,23 @@ sizeSlider.addEventListener("input", ()=>{
   draw();
 });
 
+/* Upload */
 imgUploadInput.addEventListener("change", handleImageSelect);
 imgCameraInput.addEventListener("change", handleImageSelect);
 cameraBtn.addEventListener("click", ()=> imgCameraInput.click());
 
-/* FIXED: UNLIMITED DOWNLOADS */
+/* FIXED: REPEATABLE DOWNLOAD */
 downloadBtn.addEventListener("click", () => {
   const fileName =
     "Rathnavalli_Sathyan_" + downloadCount + "_" + Date.now() + ".png";
+
   downloadCount++;
 
   const off = document.createElement("canvas");
   off.width = canvas.width;
   off.height = canvas.height;
-  const offCtx = off.getContext("2d");
 
+  const offCtx = off.getContext("2d");
   offCtx.drawImage(canvas, 0, 0);
 
   off.toBlob((blob) => {
@@ -274,11 +273,11 @@ downloadBtn.addEventListener("click", () => {
     document.body.appendChild(a);
     a.click();
     a.remove();
-
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
   });
 });
 
+/* Reset */
 resetBtn.addEventListener("click", () => {
   frame.img = null;
   uploadRow.style.display = "flex";
@@ -290,6 +289,7 @@ resetBtn.addEventListener("click", () => {
   updateUploadRowPosition();
 });
 
+/* Resize → reposition buttons */
 window.addEventListener("resize", updateUploadRowPosition);
 </script>
 
